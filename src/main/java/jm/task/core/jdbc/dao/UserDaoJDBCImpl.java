@@ -47,8 +47,9 @@ public class UserDaoJDBCImpl implements UserDao {
         Util util = new Util();
         List<User> users = new ArrayList<>();
         try (Connection connection = util.connectToDataBase();
-        PreparedStatement preparedStatement = connection.prepareStatement("SELECT *  FROM user")){
-            ResultSet resultSet = preparedStatement.executeQuery();
+             PreparedStatement preparedStatement = connection.prepareStatement("SELECT *  FROM user");
+             ResultSet resultSet = preparedStatement.executeQuery();) {
+            connection.setAutoCommit(false);
             while (resultSet.next()) {
                 long id = resultSet.getLong(1);
                 String name = resultSet.getString(2);
@@ -58,8 +59,9 @@ public class UserDaoJDBCImpl implements UserDao {
                 System.out.println(user.toString());
                 users.add(user);
             }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+            connection.commit();
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
         }
         return users;
     }
@@ -72,18 +74,26 @@ public class UserDaoJDBCImpl implements UserDao {
 
     private void executeStatement(String input) {
         Util util = new Util();
-        Connection connection = null;
         Statement statement = null;
+        Connection connection = null;
         try {
             connection = util.connectToDataBase();
             statement = connection.createStatement();
+            connection.setAutoCommit(false);
             statement.execute(input);
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+            connection.commit();
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
+            try {
+                System.out.println("Transaction failed.");
+                connection.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         } finally {
             close(connection, statement);
-        }
     }
+}
 
     private void close(Connection connection, Statement statement) {
         try {
@@ -93,8 +103,8 @@ public class UserDaoJDBCImpl implements UserDao {
             if (connection != null) {
                 connection.close();
             }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
         }
     }
 }
