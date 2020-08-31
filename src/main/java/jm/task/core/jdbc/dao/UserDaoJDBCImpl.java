@@ -74,37 +74,22 @@ public class UserDaoJDBCImpl implements UserDao {
 
     private void executeStatement(String input) {
         Util util = new Util();
-        Statement statement = null;
-        Connection connection = null;
-        try {
-            connection = util.connectToDataBase();
-            statement = connection.createStatement();
-            connection.setAutoCommit(false);
-            statement.execute(input);
-            connection.commit();
-        } catch (SQLException throwable) {
-            throwable.printStackTrace();
-            try {
-                System.out.println("Transaction failed.");
-                connection.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+        try (Connection connection = util.connectToDataBase()) {
+            try (Statement statement = connection.createStatement()) {
+                connection.setAutoCommit(false);
+                statement.execute(input);
+                connection.commit();
+            } catch (SQLException throwable) {
+                throwable.printStackTrace();
+                try {
+                    System.out.println("Transaction failed.");
+                    connection.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
             }
-        } finally {
-            close(connection, statement);
-    }
-}
-
-    private void close(Connection connection, Statement statement) {
-        try {
-            if (statement != null) {
-                statement.close();
-            }
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException throwable) {
-            throwable.printStackTrace();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
     }
 }
