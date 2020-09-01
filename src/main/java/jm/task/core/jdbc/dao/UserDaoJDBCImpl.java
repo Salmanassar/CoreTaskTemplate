@@ -8,8 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
-    public UserDaoJDBCImpl() {
+    private Connection connection;
 
+    public UserDaoJDBCImpl() {
     }
 
     public void createUsersTable() {
@@ -44,12 +45,10 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public List<User> getAllUsers() {
-        Util util = new Util();
         List<User> users = new ArrayList<>();
-        try (Connection connection = util.connectToDataBase();
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT *  FROM user");
+        connection = Util.connectToDataBase();
+        try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT *  FROM user");
              ResultSet resultSet = preparedStatement.executeQuery()) {
-            connection.setAutoCommit(false);
             while (resultSet.next()) {
                 long id = resultSet.getLong(1);
                 String name = resultSet.getString(2);
@@ -59,7 +58,6 @@ public class UserDaoJDBCImpl implements UserDao {
                 System.out.println(user.toString());
                 users.add(user);
             }
-            connection.commit();
         } catch (SQLException throwable) {
             throwable.printStackTrace();
         }
@@ -73,23 +71,19 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     private void executeStatement(String input) {
-        Util util = new Util();
-        try (Connection connection = util.connectToDataBase()) {
-            try (Statement statement = connection.createStatement()) {
-                connection.setAutoCommit(false);
-                statement.execute(input);
-                connection.commit();
-            } catch (SQLException throwable) {
-                throwable.printStackTrace();
-                try {
-                    System.out.println("Transaction failed.");
-                    connection.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
+        connection = Util.connectToDataBase();
+        try (Statement statement = connection.createStatement()) {
+            connection.setAutoCommit(false);
+            statement.execute(input);
+            connection.commit();
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
+            try {
+                System.out.println("Transaction failed.");
+                connection.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
         }
     }
 }
