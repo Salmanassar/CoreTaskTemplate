@@ -3,6 +3,7 @@ package jm.task.core.jdbc.util;
 import com.mysql.cj.jdbc.MysqlDataSource;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 
 public class Util {
@@ -17,13 +18,9 @@ public class Util {
             dataSource.setUser("user");
             dataSource.setPassword("user");
             connection = dataSource.getConnection();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-        return getConnection();
-    }
-
-    private static Connection getConnection() {
         return connection;
     }
 }
