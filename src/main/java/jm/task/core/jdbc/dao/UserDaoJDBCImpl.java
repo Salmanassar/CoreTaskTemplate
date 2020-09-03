@@ -11,9 +11,10 @@ public class UserDaoJDBCImpl implements UserDao {
     private Connection connection;
 
     public UserDaoJDBCImpl() {
+        connection = Util.connectToDataBase();
     }
 
-    public void createUsersTable() {
+    public void createUsersTable() throws SQLException {
         String createTable = "CREATE TABLE IF NOT EXISTS  user(\n" +
                 "id int auto_increment primary key,\n" +
                 "name varchar(45) NOT NULL,\n" +
@@ -24,29 +25,47 @@ public class UserDaoJDBCImpl implements UserDao {
         System.out.println("Table is created");
     }
 
-    public void dropUsersTable() {
+    public void dropUsersTable() throws SQLException {
         String dropTable = "DROP TABLE IF EXISTS user";
         executeStatement(dropTable);
         System.out.println("Table deleted");
     }
 
-    public void saveUser(String name, String lastName, byte age) {
-        String addUser = "INSERT INTO user" +
-                "(name , lastName, age) " +
-                " VALUES ('" + name + "', '" + lastName + "', '" + age + "')";
-        executeStatement(addUser);
-        System.out.println("User added " + name + " " + lastName + ", " + age + " years");
+    public void saveUser(String name, String lastName, byte age) throws SQLException {
+        String addUser = "INSERT INTO user(name , lastName, age)  VALUES (?, ?, ?)";
+        connection.setAutoCommit(false);
+        try (PreparedStatement preparedStatement =
+                     connection.prepareStatement(addUser, Statement.RETURN_GENERATED_KEYS)) {
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, lastName);
+            preparedStatement.setByte(3, age);
+            preparedStatement.executeUpdate();
+            connection.commit();
+            System.out.println("User added " + name + " " + lastName + ", " + age + " years");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            connection.rollback();
+        } finally {
+            connection.setAutoCommit(true);
+        }
     }
 
-    public void removeUserById(long id) {
-        String deleteUserById = "DELETE FROM user WHERE id =" + id;
-        executeStatement(deleteUserById);
-        System.out.println("Remove user by id " + id);
+    public void removeUserById(long id) throws SQLException {
+        connection.setAutoCommit(false);
+        try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM user WHERE id = ?")) {
+            preparedStatement.setLong(1, id);
+            preparedStatement.execute();
+            connection.commit();
+            System.out.println("Remove user by id " + id);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            connection.setAutoCommit(true);
+        }
     }
 
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-        connection = Util.connectToDataBase();
         try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT *  FROM user");
              ResultSet resultSet = preparedStatement.executeQuery()) {
             while (resultSet.next()) {
@@ -58,32 +77,29 @@ public class UserDaoJDBCImpl implements UserDao {
                 System.out.println(user.toString());
                 users.add(user);
             }
-        } catch (SQLException throwable) {
+        } catch (Exception throwable) {
             throwable.printStackTrace();
         }
         return users;
     }
 
-    public void cleanUsersTable() {
+    public void cleanUsersTable() throws SQLException {
         String deleteAllUsers = "TRUNCATE TABLE user";
         executeStatement(deleteAllUsers);
         System.out.println("Delete all users");
     }
 
-    private void executeStatement(String input) {
-        connection = Util.connectToDataBase();
-        try (Statement statement = connection.createStatement()) {
-            connection.setAutoCommit(false);
-            statement.execute(input);
+    private void executeStatement(String input) throws SQLException {
+        connection.setAutoCommit(false);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(input)) {
+            preparedStatement.execute();
             connection.commit();
-        } catch (SQLException throwable) {
+        } catch (Exception throwable) {
             throwable.printStackTrace();
-            try {
-                System.out.println("Transaction failed.");
-                connection.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
+            connection.rollback();
+            System.out.println("Transaction failed.");
+        } finally {
+            connection.setAutoCommit(true);
         }
     }
 }
