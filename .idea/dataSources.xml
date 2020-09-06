@@ -19,7 +19,7 @@
 
 C:/Users/Tom/IdeaProjects/CoreTaskTemplate/src/main/java/resources/hibernate.cfg.xml</remarks>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://127.0.0.1:3306/testbase?useSSL=false</jdbc-url>
+      <jdbc-url>jdbc:mysql://127.0.0.1:3306/testbase?useSSL=false&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC</jdbc-url>
     </data-source>
   </component>
 </project>
