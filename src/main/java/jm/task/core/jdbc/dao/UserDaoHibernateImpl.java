@@ -7,11 +7,11 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoHibernateImpl implements UserDao {
-    private Session session = null;
-    private Transaction transaction = null;
+    private Session session;
 
     public UserDaoHibernateImpl() {
         session = Util.getSessionFactory().openSession();
@@ -24,6 +24,7 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void dropUsersTable() {
+        Transaction transaction = null;
         try {
             transaction = session.beginTransaction();
             session.createSQLQuery("TRUNCATE TABLE user").executeUpdate();
@@ -39,6 +40,7 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void saveUser(String name, String lastName, byte age) {
+        Transaction transaction = null;
         try {
             transaction = session.beginTransaction();
             User user = new User(name, lastName, age);
@@ -55,6 +57,7 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void removeUserById(long id) {
+        Transaction transaction = null;
         try {
             transaction = session.beginTransaction();
             User user = session.get(User.class, id);
@@ -71,7 +74,8 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public List<User> getAllUsers() {
-        List<User> result = null;
+        List<User> result = new ArrayList<>();
+        Transaction transaction = null;
         try {
             transaction = session.beginTransaction();
             result = session.createQuery("from User").list();
@@ -80,16 +84,17 @@ public class UserDaoHibernateImpl implements UserDao {
             });
             transaction.commit();
         } catch (Exception e) {
+            e.printStackTrace();
             if (transaction != null) {
                 transaction.rollback();
             }
-            e.printStackTrace();
         }
         return result;
     }
 
     @Override
     public void cleanUsersTable() {
+        Transaction transaction = null;
         try {
             transaction = session.beginTransaction();
             Query query = session.createQuery("DELETE FROM User");
