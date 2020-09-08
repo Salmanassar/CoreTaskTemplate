@@ -7,11 +7,10 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoHibernateImpl implements UserDao {
-    private Session session;
+    private Session session = null;
 
     public UserDaoHibernateImpl() {
         session = Util.getSessionFactory().openSession();
@@ -74,7 +73,7 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public List<User> getAllUsers() {
-        List<User> result = new ArrayList<>();
+        List<User> result = null;
         Transaction transaction = null;
         try {
             transaction = session.beginTransaction();
